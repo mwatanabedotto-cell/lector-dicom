@@ -305,24 +305,29 @@
     var lh = 13;
     var i;
 
+    // Cada esquina dispone de media anchura menos un canal central. En un
+    // panel estrecho, como una celda del MPR 2x2, los textos de izquierda y
+    // derecha se solaparian sin este recorte.
+    var maxWidth = Math.max(40, (w - pad * 2 - 14) / 2);
+
     for (i = 0; i < this.overlay.topLeft.length; i++) {
       ctx.textAlign = 'left';
-      ctx.fillText(this.overlay.topLeft[i], pad, pad + i * lh);
+      ctx.fillText(elide(ctx, this.overlay.topLeft[i], maxWidth), pad, pad + i * lh);
     }
     for (i = 0; i < this.overlay.topRight.length; i++) {
       ctx.textAlign = 'right';
-      ctx.fillText(this.overlay.topRight[i], w - pad, pad + i * lh);
+      ctx.fillText(elide(ctx, this.overlay.topRight[i], maxWidth), w - pad, pad + i * lh);
     }
     ctx.textBaseline = 'bottom';
     for (i = 0; i < this.overlay.bottomLeft.length; i++) {
       ctx.textAlign = 'left';
       var blIndex = this.overlay.bottomLeft.length - 1 - i;
-      ctx.fillText(this.overlay.bottomLeft[blIndex], pad, h - pad - i * lh);
+      ctx.fillText(elide(ctx, this.overlay.bottomLeft[blIndex], maxWidth), pad, h - pad - i * lh);
     }
     for (i = 0; i < this.overlay.bottomRight.length; i++) {
       ctx.textAlign = 'right';
       var brIndex = this.overlay.bottomRight.length - 1 - i;
-      ctx.fillText(this.overlay.bottomRight[brIndex], w - pad, h - pad - i * lh);
+      ctx.fillText(elide(ctx, this.overlay.bottomRight[brIndex], maxWidth), w - pad, h - pad - i * lh);
     }
 
     if (this.orientationLabels) {
@@ -380,6 +385,23 @@
   function localPoint(viewport, event) {
     var rect = viewport.canvas.getBoundingClientRect();
     return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  }
+
+  /**
+   * Recorta un texto para que quepa en `maxWidth`, anadiendo puntos
+   * suspensivos. Busqueda binaria sobre la longitud: medir caracter a
+   * caracter se nota cuando hay cuatro paneles repintando.
+   */
+  function elide(ctx, text, maxWidth) {
+    if (!text || ctx.measureText(text).width <= maxWidth) return text;
+    var low = 0;
+    var high = text.length;
+    while (low < high) {
+      var mid = (low + high + 1) >> 1;
+      if (ctx.measureText(text.slice(0, mid) + '…').width <= maxWidth) low = mid;
+      else high = mid - 1;
+    }
+    return low > 0 ? text.slice(0, low) + '…' : '';
   }
 
   /** Angulo del cursor alrededor del punto de referencia, en pantalla. */

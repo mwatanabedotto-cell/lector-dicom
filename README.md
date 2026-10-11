@@ -200,6 +200,22 @@ bloqueados por CORS.
 | I / R / O / Espacio | Invertir, reencuadrar, volver a ortogonal, cine |
 | Supr / Esc | Borrar medición, cancelar la que está en curso |
 
+## Desarrollo
+
+GitHub Pages sirve los ficheros con `Cache-Control: max-age=600`. Tras un
+`push`, el navegador seguirá ejecutando el JavaScript anterior hasta diez
+minutos, sin ningún aviso: la página carga, no hay error en consola y el
+cambio simplemente no está. Para comprobar qué versión tienes cargada:
+
+```js
+(await (await fetch('js/ui/viewport.js')).text()).length
+```
+
+y compáralo con un `fetch` del mismo fichero añadiendo `?cb=` y la hora. Si
+difieren, recarga forzando el vaciado de caché (Ctrl+Shift+R). Para iterar
+rápido es más cómodo trabajar en local con `serve.ps1`, que responde con
+`Cache-Control: no-store`.
+
 ## Licencia
 
 Apache 2.0. Ver [LICENSE](LICENSE) y [NOTICE](NOTICE).

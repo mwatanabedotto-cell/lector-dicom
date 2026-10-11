@@ -76,6 +76,29 @@ html, body {
 .tgroup.right { margin-left: auto; padding-right: 0; }
 .sep { width: 1px; height: 18px; background: var(--line); margin: 0 3px; }
 
+/* La hoja de iconos no se pinta: solo aporta las definiciones que referencian
+   los <use>. No se usa display:none porque algunos motores dejan entonces de
+   resolver las referencias. */
+.sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* fill y stroke son heredables: se declaran en la raiz del icono y los nodos
+   que deben ir rellenos lo sobrescriben con su propio atributo de
+   presentacion. Por eso la regla no puede ser `.ic *`, que ganaria a esos
+   atributos y aplanaria todos los iconos. */
+.ic {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  /* El clic debe llegar siempre al boton: la delegacion de eventos busca el
+     .tool mas cercano y el objetivo no puede ser un nodo del SVG. */
+  pointer-events: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .btn {
   appearance: none;
   border: 1px solid var(--line);
@@ -87,8 +110,14 @@ html, body {
   border-radius: 4px;
   cursor: pointer;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   transition: background .12s, color .12s, border-color .12s;
 }
+/* Boton de solo icono: cuadrado y sin el hueco del texto. */
+.btn.only { padding: 5px; gap: 0; }
+.btn.only .ic { width: 17px; height: 17px; }
 .btn:hover { background: #1b2331; color: var(--text); }
 .btn:active { transform: translateY(1px); }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
@@ -99,7 +128,6 @@ html, body {
   color: #a9cbf5;
 }
 .btn.small { font-size: 11px; padding: 3px 7px; }
-.btn.icon { padding: 3px 8px; font-size: 15px; line-height: 1; }
 .btn:disabled { opacity: .4; cursor: default; }
 
 .field {

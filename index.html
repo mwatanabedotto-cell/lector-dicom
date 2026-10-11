@@ -4,9 +4,118 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lector DICOM</title>
+<!-- Favicon como data URI: evita una peticion mas y mantiene la propiedad de
+     que la aplicacion no pide nada fuera de sus propios ficheros. -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%233d7dd8'/%3E%3Cg fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round'%3E%3Cellipse cx='16' cy='16' rx='9.5' ry='7'/%3E%3Cpath d='M16 9v14'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+
+<!--
+  Hoja de iconos. Se define una vez y cada boton la referencia con <use>, de
+  modo que no hay fuente de iconos ni peticion externa: el visor sigue sin
+  pedir nada que no sea suyo. Los trazos usan currentColor para heredar el
+  color del boton, incluido el estado activo.
+-->
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-folder" viewBox="0 0 24 24">
+      <path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+    </symbol>
+    <symbol id="i-file" viewBox="0 0 24 24">
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/>
+      <path d="M14 3v5h5"/>
+    </symbol>
+    <symbol id="i-flask" viewBox="0 0 24 24">
+      <path d="M10 3h4M11 3v6.5L5.6 18a2 2 0 0 0 1.7 3h9.4a2 2 0 0 0 1.7-3L13 9.5V3"/>
+      <path d="M8 15h8"/>
+    </symbol>
+
+    <symbol id="i-wwwl" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="8.5"/>
+      <path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/>
+    </symbol>
+    <symbol id="i-pan" viewBox="0 0 24 24">
+      <path d="M12 3v18M3 12h18"/>
+      <path d="M12 3 9.5 5.8M12 3l2.5 2.8M12 21l-2.5-2.8M12 21l2.5-2.8"/>
+      <path d="M3 12l2.8-2.5M3 12l2.8 2.5M21 12l-2.8-2.5M21 12l-2.8 2.5"/>
+    </symbol>
+    <symbol id="i-zoom" viewBox="0 0 24 24">
+      <circle cx="10.5" cy="10.5" r="6.5"/>
+      <path d="M15.5 15.5 21 21M8 10.5h5M10.5 8v5"/>
+    </symbol>
+    <symbol id="i-crosshair" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="7"/>
+      <path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>
+    </symbol>
+    <symbol id="i-rotate" viewBox="0 0 24 24">
+      <path d="M20 12a8 8 0 1 1-2.6-5.9"/>
+      <path d="M20 4v4.5h-4.5"/>
+      <circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/>
+    </symbol>
+
+    <symbol id="i-probe" viewBox="0 0 24 24">
+      <path d="M18.5 3.2a2.4 2.4 0 0 1 2.3 2.3c0 .6-.3 1.2-.7 1.6l-2.3 2.3 1 1-5.6 5.6-3.2-3.2L15.6 7l1 1 2.3-2.3"/>
+      <path d="M8.6 14.3 4 18.9V21h2.1l4.6-4.6"/>
+    </symbol>
+    <symbol id="i-length" viewBox="0 0 24 24">
+      <path d="M5 19 19 5"/>
+      <path d="M3.2 15.5 8.5 20.8M15.5 3.2l5.3 5.3"/>
+    </symbol>
+    <symbol id="i-angle" viewBox="0 0 24 24">
+      <path d="M4 20h17M4 20 16 4"/>
+      <path d="M12.5 20a8.5 8.5 0 0 0-2.3-5.8"/>
+    </symbol>
+    <symbol id="i-rect" viewBox="0 0 24 24">
+      <rect x="3.5" y="5.5" width="17" height="13" rx="1.5" stroke-dasharray="3.2 2.4"/>
+      <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+    </symbol>
+    <symbol id="i-ellipse" viewBox="0 0 24 24">
+      <ellipse cx="12" cy="12" rx="8.5" ry="6.5" stroke-dasharray="3.2 2.4"/>
+      <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+    </symbol>
+
+    <symbol id="i-play" viewBox="0 0 24 24">
+      <path d="M7 4.5 19.5 12 7 19.5z"/>
+    </symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24">
+      <path d="M8.5 4.5v15M15.5 4.5v15"/>
+    </symbol>
+
+    <symbol id="i-invert" viewBox="0 0 24 24">
+      <rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/>
+      <!-- Mitad exacta: el triangulo inferior derecho relleno contra el
+           superior izquierdo vacio. La division diagonal es lo que lee como
+           "invertir" sin confundirse con el icono de ventana/nivel. -->
+      <path d="M19.2 6.3V19.2H6.3Z" fill="currentColor" stroke="none"/>
+    </symbol>
+    <symbol id="i-smooth" viewBox="0 0 24 24">
+      <path d="M3 17c3.5 0 3.5-10 7-10s3.5 10 7 10 4-3 4-3"/>
+    </symbol>
+    <symbol id="i-axes" viewBox="0 0 24 24">
+      <path d="M12 12V3M12 12 4 17M12 12l8 5"/>
+      <path d="M12 3 9.8 5.4M12 3l2.2 2.4"/>
+      <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+    </symbol>
+    <symbol id="i-fit" viewBox="0 0 24 24">
+      <path d="M3.5 9V5a1.5 1.5 0 0 1 1.5-1.5h4M15 3.5h4A1.5 1.5 0 0 1 20.5 5v4"/>
+      <path d="M20.5 15v4a1.5 1.5 0 0 1-1.5 1.5h-4M9 20.5H5A1.5 1.5 0 0 1 3.5 19v-4"/>
+    </symbol>
+    <symbol id="i-download" viewBox="0 0 24 24">
+      <path d="M12 3.5v11M7.5 10 12 14.5 16.5 10"/>
+      <path d="M4 17v2.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V17"/>
+    </symbol>
+    <symbol id="i-help" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="8.5"/>
+      <path d="M9.6 9.3a2.5 2.5 0 1 1 3.3 2.4c-.6.2-.9.8-.9 1.4v.6"/>
+      <circle cx="12" cy="17" r="1.1" fill="currentColor" stroke="none"/>
+    </symbol>
+
+    <symbol id="i-prev" viewBox="0 0 24 24"><path d="M14.5 5 8 12l6.5 7"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path d="M9.5 5 16 12l-6.5 7"/></symbol>
+  </defs>
+</svg>
+
 <div id="app">
 
   <header class="toolbar">
@@ -16,25 +125,41 @@
     </div>
 
     <div class="tgroup">
-      <button id="btnOpenFolder" class="btn primary" title="Abrir una carpeta de estudio completa">Abrir carpeta</button>
-      <button id="btnOpenFiles" class="btn" title="Abrir ficheros sueltos">Archivos</button>
-      <button id="btnPhantom" class="btn" title="Generar un estudio TC sintetico para probar">Fantoma</button>
+      <button id="btnOpenFolder" class="btn primary" title="Abrir una carpeta de estudio completa">
+        <svg class="ic"><use href="#i-folder"/></svg><span>Abrir carpeta</span>
+      </button>
+      <button id="btnOpenFiles" class="btn" title="Abrir ficheros sueltos">
+        <svg class="ic"><use href="#i-file"/></svg><span>Archivos</span>
+      </button>
+      <button id="btnPhantom" class="btn" title="Generar un estudio TC sintetico para probar">
+        <svg class="ic"><use href="#i-flask"/></svg><span>Fantoma</span>
+      </button>
       <input type="file" id="folderInput" webkitdirectory directory multiple hidden>
       <input type="file" id="filesInput" multiple hidden>
     </div>
 
     <div class="tgroup" id="toolButtons">
-      <button class="btn tool" data-tool="wwwl" title="Ventana / nivel (W)">W/L</button>
-      <button class="btn tool" data-tool="pan" title="Desplazar (P)">Mover</button>
-      <button class="btn tool" data-tool="zoom" title="Zoom (Z)">Zoom</button>
-      <button class="btn tool" data-tool="crosshair" title="Situar la cruz de referencia (C)">Cruz</button>
-      <button class="btn tool" data-tool="rotate" title="Reorientar el plano: arrastra para girar las lineas de referencia (G)">Girar</button>
+      <button class="btn tool only" data-tool="wwwl" aria-label="Ventana y nivel"
+              title="Ventana / nivel (W)"><svg class="ic"><use href="#i-wwwl"/></svg></button>
+      <button class="btn tool only" data-tool="pan" aria-label="Desplazar"
+              title="Desplazar (P)"><svg class="ic"><use href="#i-pan"/></svg></button>
+      <button class="btn tool only" data-tool="zoom" aria-label="Zoom"
+              title="Zoom (Z)"><svg class="ic"><use href="#i-zoom"/></svg></button>
+      <button class="btn tool only" data-tool="crosshair" aria-label="Cruz de referencia"
+              title="Situar la cruz de referencia (C)"><svg class="ic"><use href="#i-crosshair"/></svg></button>
+      <button class="btn tool only" data-tool="rotate" aria-label="Girar el plano"
+              title="Reorientar el plano: arrastra para girar las lineas de referencia (G)"><svg class="ic"><use href="#i-rotate"/></svg></button>
       <span class="sep"></span>
-      <button class="btn tool" data-tool="probe" title="Valor en un punto (1)">Punto</button>
-      <button class="btn tool" data-tool="length" title="Regla (2)">Regla</button>
-      <button class="btn tool" data-tool="angle" title="Angulo, tres clics (3)">Angulo</button>
-      <button class="btn tool" data-tool="rect" title="ROI rectangular (4)">ROI &#9633;</button>
-      <button class="btn tool" data-tool="ellipse" title="ROI eliptica (5)">ROI &#9711;</button>
+      <button class="btn tool only" data-tool="probe" aria-label="Valor en un punto"
+              title="Valor en un punto (1)"><svg class="ic"><use href="#i-probe"/></svg></button>
+      <button class="btn tool only" data-tool="length" aria-label="Regla"
+              title="Regla (2)"><svg class="ic"><use href="#i-length"/></svg></button>
+      <button class="btn tool only" data-tool="angle" aria-label="Angulo"
+              title="Angulo, tres clics (3)"><svg class="ic"><use href="#i-angle"/></svg></button>
+      <button class="btn tool only" data-tool="rect" aria-label="ROI rectangular"
+              title="ROI rectangular (4)"><svg class="ic"><use href="#i-rect"/></svg></button>
+      <button class="btn tool only" data-tool="ellipse" aria-label="ROI eliptica"
+              title="ROI eliptica (5)"><svg class="ic"><use href="#i-ellipse"/></svg></button>
     </div>
 
     <div class="tgroup">
@@ -61,17 +186,29 @@
     </div>
 
     <div class="tgroup">
-      <button id="btnCine" class="btn" title="Reproducir la serie (barra espaciadora)">&#9654; Cine</button>
+      <button id="btnCine" class="btn" title="Reproducir la serie (barra espaciadora)">
+        <svg class="ic"><use href="#i-play" id="cineIcon"/></svg><span>Cine</span>
+      </button>
       <label class="field narrow"><span>fps</span><input type="number" id="fpsInput" min="1" max="60" value="12"></label>
     </div>
 
     <div class="tgroup right">
-      <button id="btnInvert" class="btn toggle" title="Invertir escala de grises (I)">Invertir</button>
-      <button id="btnSmooth" class="btn toggle on" title="Suavizado al ampliar">Suavizar</button>
-      <button id="btnResetOrientation" class="btn" title="Volver a los planos nativos de la serie (O)">Ortogonal</button>
-      <button id="btnReset" class="btn" title="Restablecer zoom y encuadre (R)">Encuadrar</button>
-      <button id="btnSavePng" class="btn" title="Guardar el panel activo como PNG">PNG</button>
-      <button id="btnHelp" class="btn" title="Atajos de teclado">?</button>
+      <button id="btnInvert" class="btn toggle" title="Invertir escala de grises (I)">
+        <svg class="ic"><use href="#i-invert"/></svg><span>Invertir</span>
+      </button>
+      <button id="btnSmooth" class="btn toggle on" title="Suavizado al ampliar">
+        <svg class="ic"><use href="#i-smooth"/></svg><span>Suavizar</span>
+      </button>
+      <button id="btnResetOrientation" class="btn" title="Volver a los planos nativos de la serie (O)">
+        <svg class="ic"><use href="#i-axes"/></svg><span>Ortogonal</span>
+      </button>
+      <button id="btnReset" class="btn" title="Restablecer zoom y encuadre (R)">
+        <svg class="ic"><use href="#i-fit"/></svg><span>Encuadrar</span>
+      </button>
+      <button id="btnSavePng" class="btn only" aria-label="Guardar como PNG"
+              title="Guardar el panel activo como PNG"><svg class="ic"><use href="#i-download"/></svg></button>
+      <button id="btnHelp" class="btn only" aria-label="Atajos de teclado"
+              title="Atajos de teclado"><svg class="ic"><use href="#i-help"/></svg></button>
     </div>
   </header>
 
@@ -88,9 +225,11 @@
     <section class="stage">
       <div id="grid" class="grid layout-1x1"></div>
       <div class="slicebar">
-        <button id="btnPrev" class="btn icon" title="Corte anterior">&#8249;</button>
+        <button id="btnPrev" class="btn only" aria-label="Corte anterior"
+                title="Corte anterior"><svg class="ic"><use href="#i-prev"/></svg></button>
         <input type="range" id="sliceSlider" min="0" max="0" value="0">
-        <button id="btnNext" class="btn icon" title="Corte siguiente">&#8250;</button>
+        <button id="btnNext" class="btn only" aria-label="Corte siguiente"
+                title="Corte siguiente"><svg class="ic"><use href="#i-next"/></svg></button>
         <span id="sliceLabel" class="mono">--</span>
       </div>
       <div id="dropzone" class="dropzone">

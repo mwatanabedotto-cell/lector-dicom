@@ -1007,7 +1007,7 @@
     if (state.cine) return;
     var fps = Math.max(1, Math.min(60, parseInt(dom.fpsInput.value, 10) || 12));
     dom.btnCine.classList.add('on');
-    dom.btnCine.innerHTML = '&#10073;&#10073; Cine';
+    setCineIcon('#i-pause');
     state.cine = setInterval(function () {
       var next = state.index + 1;
       state.index = next >= sliceCount() ? 0 : next;
@@ -1021,7 +1021,16 @@
     clearInterval(state.cine);
     state.cine = null;
     dom.btnCine.classList.remove('on');
-    dom.btnCine.innerHTML = '&#9654; Cine';
+    setCineIcon('#i-play');
+  }
+
+  /**
+   * Cambia el icono del boton de cine sin tocar su contenido, que antes se
+   * reescribia entero con innerHTML y se llevaba por delante el <svg>.
+   */
+  function setCineIcon(id) {
+    var use = dom.cineIcon;
+    if (use) use.setAttribute('href', id);
   }
 
   function toggleCine() {
@@ -1149,7 +1158,7 @@
     [
       'btnOpenFolder', 'btnOpenFiles', 'btnPhantom', 'folderInput', 'filesInput', 'toolButtons',
       'presetSelect', 'wwInput', 'wcInput', 'layoutSelect', 'slabInput', 'slabField',
-      'btnCine', 'fpsInput', 'btnInvert', 'btnSmooth', 'btnReset', 'btnSavePng',
+      'btnCine', 'cineIcon', 'fpsInput', 'btnInvert', 'btnSmooth', 'btnReset', 'btnSavePng',
       'btnResetOrientation',
       'btnHelp', 'patientCard', 'seriesCount', 'seriesList', 'grid', 'dropzone',
       'sliceSlider', 'sliceLabel', 'btnPrev', 'btnNext', 'metaFilter', 'metaTable',

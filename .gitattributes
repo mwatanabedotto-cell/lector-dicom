@@ -1,0 +1,8 @@
+# Normaliza los finales de linea: LF en el repositorio y en el arbol de
+# trabajo, tambien en Windows. Sin esto, Git for Windows convierte a CRLF al
+# hacer checkout y cualquiera que edite desde otro sistema ve el fichero
+# entero como modificado.
+* text=auto eol=lf
+
+# El texto de la licencia se guarda tal cual viene de apache.org.
+LICENSE -text

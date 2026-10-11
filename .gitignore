@@ -1,0 +1,36 @@
+# --- Datos de pacientes ---------------------------------------------------
+# Lo primero y lo que mas importa en este repositorio. Un estudio real
+# contiene datos de salud identificables; una vez subido a GitHub queda en el
+# historial aunque se borre despues. Si hace falta material de prueba, usa el
+# generador de fantoma (boton "Fantoma", js/dev/phantom.js).
+*.dcm
+*.DCM
+*.dicom
+*.ima
+*.IMA
+DICOMDIR
+estudios/
+studies/
+datos/
+data/
+muestras/
+samples/
+
+# --- Sistema operativo ----------------------------------------------------
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# --- Editores -------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*~
+
+# --- Por si mas adelante entra algo de tooling ----------------------------
+node_modules/
+dist/
+build/
+*.log

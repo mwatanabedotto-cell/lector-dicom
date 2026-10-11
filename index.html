@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lector DICOM</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="app">
+
+  <header class="toolbar">
+    <div class="brand">
+      <span class="brand-mark">DCM</span>
+      <span class="brand-text">Lector DICOM</span>
+    </div>
+
+    <div class="tgroup">
+      <button id="btnOpenFolder" class="btn primary" title="Abrir una carpeta de estudio completa">Abrir carpeta</button>
+      <button id="btnOpenFiles" class="btn" title="Abrir ficheros sueltos">Archivos</button>
+      <button id="btnPhantom" class="btn" title="Generar un estudio TC sintetico para probar">Fantoma</button>
+      <input type="file" id="folderInput" webkitdirectory directory multiple hidden>
+      <input type="file" id="filesInput" multiple hidden>
+    </div>
+
+    <div class="tgroup" id="toolButtons">
+      <button class="btn tool" data-tool="wwwl" title="Ventana / nivel (W)">W/L</button>
+      <button class="btn tool" data-tool="pan" title="Desplazar (P)">Mover</button>
+      <button class="btn tool" data-tool="zoom" title="Zoom (Z)">Zoom</button>
+      <button class="btn tool" data-tool="crosshair" title="Situar la cruz de referencia (C)">Cruz</button>
+      <button class="btn tool" data-tool="rotate" title="Reorientar el plano: arrastra para girar las lineas de referencia (G)">Girar</button>
+      <span class="sep"></span>
+      <button class="btn tool" data-tool="probe" title="Valor en un punto (1)">Punto</button>
+      <button class="btn tool" data-tool="length" title="Regla (2)">Regla</button>
+      <button class="btn tool" data-tool="angle" title="Angulo, tres clics (3)">Angulo</button>
+      <button class="btn tool" data-tool="rect" title="ROI rectangular (4)">ROI &#9633;</button>
+      <button class="btn tool" data-tool="ellipse" title="ROI eliptica (5)">ROI &#9711;</button>
+    </div>
+
+    <div class="tgroup">
+      <label class="field">
+        <span>Ventana</span>
+        <select id="presetSelect"></select>
+      </label>
+      <label class="field narrow"><span>A</span><input type="number" id="wwInput" step="10"></label>
+      <label class="field narrow"><span>C</span><input type="number" id="wcInput" step="10"></label>
+    </div>
+
+    <div class="tgroup">
+      <label class="field">
+        <span>Vista</span>
+        <select id="layoutSelect">
+          <option value="1x1">Un panel</option>
+          <option value="2x2">MPR 2x2</option>
+          <option value="1x3">MPR 1x3</option>
+        </select>
+      </label>
+      <label class="field narrow" id="slabField" title="Grosor del slab para el MIP axial">
+        <span>MIP</span><input type="number" id="slabInput" min="0" max="200" step="5" value="20">
+      </label>
+    </div>
+
+    <div class="tgroup">
+      <button id="btnCine" class="btn" title="Reproducir la serie (barra espaciadora)">&#9654; Cine</button>
+      <label class="field narrow"><span>fps</span><input type="number" id="fpsInput" min="1" max="60" value="12"></label>
+    </div>
+
+    <div class="tgroup right">
+      <button id="btnInvert" class="btn toggle" title="Invertir escala de grises (I)">Invertir</button>
+      <button id="btnSmooth" class="btn toggle on" title="Suavizado al ampliar">Suavizar</button>
+      <button id="btnResetOrientation" class="btn" title="Volver a los planos nativos de la serie (O)">Ortogonal</button>
+      <button id="btnReset" class="btn" title="Restablecer zoom y encuadre (R)">Encuadrar</button>
+      <button id="btnSavePng" class="btn" title="Guardar el panel activo como PNG">PNG</button>
+      <button id="btnHelp" class="btn" title="Atajos de teclado">?</button>
+    </div>
+  </header>
+
+  <main>
+    <aside class="panel left">
+      <div id="patientCard" class="card muted">Sin estudio cargado</div>
+      <div class="panel-head">
+        <h2>Series</h2>
+        <span id="seriesCount" class="badge"></span>
+      </div>
+      <div id="seriesList" class="series-list"></div>
+    </aside>
+
+    <section class="stage">
+      <div id="grid" class="grid layout-1x1"></div>
+      <div class="slicebar">
+        <button id="btnPrev" class="btn icon" title="Corte anterior">&#8249;</button>
+        <input type="range" id="sliceSlider" min="0" max="0" value="0">
+        <button id="btnNext" class="btn icon" title="Corte siguiente">&#8250;</button>
+        <span id="sliceLabel" class="mono">--</span>
+      </div>
+      <div id="dropzone" class="dropzone">
+        <div class="dz-inner">
+          <h1>Lector DICOM</h1>
+          <p>Arrastra aqui una carpeta de estudio, o usa <b>Abrir carpeta</b>.</p>
+          <ul>
+            <li>Los ficheros se leen en el navegador: no se sube nada a ningun servidor.</li>
+            <li>Soporta TC, RM, RX y ecografia sin comprimir, RLE y JPEG basico.</li>
+            <li>Con una serie de cortes paralelos se habilita la reconstruccion MPR.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <aside class="panel right">
+      <div class="tabs" id="tabs">
+        <button class="tab on" data-tab="meta">Metadatos</button>
+        <button class="tab" data-tab="measure">Mediciones</button>
+        <button class="tab" data-tab="log">Avisos</button>
+      </div>
+      <div class="tab-body" id="tabMeta">
+        <input type="search" id="metaFilter" placeholder="Filtrar por nombre o tag...">
+        <div id="metaTable" class="meta-table muted">Selecciona una imagen.</div>
+      </div>
+      <div class="tab-body hidden" id="tabMeasure">
+        <div class="panel-head compact">
+          <span id="measureCount" class="badge"></span>
+          <button id="btnClearAnnotations" class="btn small">Borrar todas</button>
+        </div>
+        <div id="measureList" class="measure-list muted">Sin mediciones.</div>
+      </div>
+      <div class="tab-body hidden" id="tabLog">
+        <div id="logList" class="log-list muted">Sin avisos.</div>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="statusbar">
+    <span id="statusMessage">Listo</span>
+    <span class="spacer"></span>
+    <span id="cursorReadout" class="mono"></span>
+    <span id="progressWrap" class="progress hidden"><span id="progressBar"></span></span>
+  </footer>
+
+</div>
+
+<div id="helpDialog" class="modal hidden">
+  <div class="modal-box">
+    <h2>Atajos</h2>
+    <table>
+      <tr><td class="mono">Rueda</td><td>Cambiar de corte</td></tr>
+      <tr><td class="mono">Ctrl + rueda</td><td>Zoom sobre el cursor</td></tr>
+      <tr><td class="mono">Boton derecho</td><td>Ventana / nivel</td></tr>
+      <tr><td class="mono">Boton central</td><td>Desplazar</td></tr>
+      <tr><td class="mono">Doble clic</td><td>Reencuadrar el panel</td></tr>
+      <tr><td class="mono">&#8593; &#8595;</td><td>Corte anterior / siguiente</td></tr>
+      <tr><td class="mono">PgUp / PgDn</td><td>Salto de 10 cortes</td></tr>
+      <tr><td class="mono">Inicio / Fin</td><td>Primer / ultimo corte</td></tr>
+      <tr><td class="mono">W P Z C G</td><td>Ventana, mover, zoom, cruz, girar</td></tr>
+      <tr><td class="mono">1 2 3 4 5</td><td>Punto, regla, angulo, ROI rect, ROI elipse</td></tr>
+      <tr><td class="mono">I</td><td>Invertir grises</td></tr>
+      <tr><td class="mono">O</td><td>Volver a los planos ortogonales</td></tr>
+      <tr><td class="mono">R</td><td>Reencuadrar</td></tr>
+      <tr><td class="mono">Espacio</td><td>Cine on/off</td></tr>
+      <tr><td class="mono">Supr</td><td>Borrar la medicion seleccionada</td></tr>
+      <tr><td class="mono">Esc</td><td>Cancelar la medicion en curso</td></tr>
+    </table>
+    <p class="note">
+      Herramienta de visualizacion y desarrollo. No es un producto sanitario ni
+      esta validado para diagnostico.
+    </p>
+    <button id="btnCloseHelp" class="btn primary">Cerrar</button>
+  </div>
+</div>
+
+<script src="js/dicom/dictionary.js"></script>
+<script src="js/dicom/parser.js"></script>
+<script src="js/dicom/decoders.js"></script>
+<script src="js/dicom/image.js"></script>
+<script src="js/dicom/volume.js"></script>
+<script src="js/dicom/mpr.js"></script>
+<script src="js/ui/tools.js"></script>
+<script src="js/ui/viewport.js"></script>
+<script src="js/ui/app.js"></script>
+<script src="js/dev/phantom.js"></script>
+</body>
+</html>

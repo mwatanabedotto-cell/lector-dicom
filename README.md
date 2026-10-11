@@ -1,29 +1,47 @@
 # Lector DICOM
 
-Visor DICOM que funciona abriendo `index.html` en el navegador. Sin instalación,
-sin servidor, sin dependencias externas: el parser, el renderizador y la
-reconstrucción multiplanar están escritos en el propio proyecto.
+Visor DICOM sin instalación, sin servidor y sin dependencias externas: el
+parser, el renderizador y la reconstrucción multiplanar están escritos en el
+propio proyecto.
 
-Los ficheros se leen con la File API del navegador y **nunca salen del equipo**.
+### → [Abrir el lector](https://mwatanabedotto-cell.github.io/lector-dicom/)
 
 > Herramienta de visualización y desarrollo. No es un producto sanitario ni está
 > validado para uso diagnóstico.
 
+## Privacidad
+
+**Las imágenes nunca salen de tu equipo.** Se leen con la File API del
+navegador y se procesan en memoria; no hay subida, ni petición de red, ni
+almacenamiento.
+
+Esto vale igual para la versión publicada en GitHub Pages: Pages entrega el
+HTML y el JavaScript, y a partir de ahí todo ocurre en tu navegador. Que la
+aplicación esté en una URL no significa que tus estudios viajen a ninguna
+parte. Si quieres comprobarlo, abre las herramientas de desarrollo en la
+pestaña Red y carga un estudio: no se genera ni una sola petición.
+
+Aun así, el repositorio no admite datos de pacientes: ver [Contribuir](#contribuir).
+
 ## Uso
 
-Abre `index.html` con doble clic. Luego:
+Tres formas, todas equivalentes:
+
+1. [La versión publicada](https://mwatanabedotto-cell.github.io/lector-dicom/), sin descargar nada.
+2. Clonar el repositorio y abrir `index.html` con doble clic.
+3. Clonar y servirlo por HTTP, si tu navegador pone pegas con `file://`:
+
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File "serve.ps1"
+   ```
+
+   y abrir <http://127.0.0.1:8731/>. El script usa solo .NET del sistema, no
+   hace falta Node ni Python.
+
+Una vez dentro:
 
 - **Abrir carpeta** para cargar un estudio completo, o arrastra la carpeta sobre la ventana.
 - **Fantoma** genera un estudio TC sintético para probar sin datos reales.
-
-Si el navegador pone pegas con `file://`, sirve la carpeta por HTTP:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File "serve.ps1"
-```
-
-y abre <http://127.0.0.1:8731/>. El script usa solo .NET del sistema, no hace
-falta Node ni Python.
 
 ## Qué hace
 
